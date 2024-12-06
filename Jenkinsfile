@@ -1,26 +1,30 @@
 pipeline {
     agent any
+    tools {
+        maven 'Maven'
+    }
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git credentialsId: 'credential', branch: 'main', url: 'https://github.com/Madhavshah13/spring-petclinic.git'
+                git branch: 'main',
+                    url: 'https://github.com/spring-projects/spring-petclinic.git'
             }
         }
         stage('Build') {
             steps {
-                sh './mvnw clean package'
+                sh '''
+                    chmod +x mvnw
+                    ./mvnw clean package
+                '''
             }
         }
-        stage('Static Analysis') {
+        stage('Execute') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh './mvnw sonar:sonar'
-                }
-            }
-        }
-        stage('Test') {
-            steps {
-                sh './mvnw test'
+                sh '''
+                    cd target
+                    java -jar spring-petclinic-3.3.0-SNAPSHOT.jar --server.port=8085 > petclinic.log 2>&1 &
+                    sleep 300
+                '''
             }
         }
     }
